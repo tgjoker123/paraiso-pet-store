@@ -681,10 +681,16 @@ async function checkout() {
     if(descontoAtivo > 0) msg += `\n*Cupom:* ${cupomAplicadoNome} (-${descontoAtivo}%)`;
     msg += `\n\n*TOTAL: R$ ${totalFinal.toFixed(2)}*`;
 
-    // Salva de forma assíncrona no banco de dados e depois abre o Whats
+    // Salva o pedido no Supabase
     await finalizarCompra("Cliente Loja", WHATS_NUMBER, totalFinal, cupomAplicadoNome);
-    window.open(`https://wa.me/${WHATS_NUMBER}?text=${encodeURIComponent(msg)}`);
+    
+    // Gera a URL otimizada para celular e computador
+    const urlWhats = `https://api.whatsapp.com/send?phone=${WHATS_NUMBER}&text=${encodeURIComponent(msg)}`;
+    
+    // Redireciona diretamente na mesma aba, garantindo abertura do app no celular
+    window.location.href = urlWhats;
 }
+
 
 async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupom) {
     try {
