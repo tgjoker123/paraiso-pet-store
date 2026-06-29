@@ -625,14 +625,39 @@ function applyCoupon() {
     updateCart();
 }
 
-function checkout() {
+async function checkout() {
     if(cart.length === 0) return alert("Sua sacola está vazia!");
+
+    // 1. Pede o local de entrega para o cliente usando um prompt na tela
+    let localEntrega = prompt("Por favor, digite o local/endereço de entrega:");
+    
+    // Se o cliente clicar em cancelar ou não digitar nada, para a execução
+    if(!localEntrega) return alert("É necessário informar o local de entrega para finalizar o pedido!");
+
+    // 2. Monta a mensagem do WhatsApp com o local de entrega
     let msg = "NOVO PEDIDO - PARAÍSO PET STORE\n\n";
     cart.forEach(i => {
         msg += `  ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`;
     });
+    
     if(descontoAtivo > 0) msg += `\n*Cupom:* ${cupomAplicadoNome} (-${descontoAtivo}%)`;
+    
+    // Adiciona o local de entrega no texto do WhatsApp
+    msg += `\n\n*Local de Entrega:* ${localEntrega}`;
+    
     msg += `\n\n*TOTAL: ${document.getElementById('cart-total').innerText}*`;
+
+    // 3. SALVA NO SUPABASE ANTES DE ABRIR O WHATSAPP
+    // Pegamos o valor do total limpando o "R$" se houver, para salvar como número puro no banco
+    let totalTexto = document.getElementById('cart-total').innerText;
+    let totalNumero = parseFloat(totalTexto.replace(/[^\d,.]/g, '').replace(',', '.')); 
+    let cupomUsado = descontoAtivo > 0 ? cupomAplicadoNome : null;
+
+    // Chama a função que criamos antes para gravar na tabela 'pedidos'
+    // Passamos o 'localEntrega' no lugar do nome do cliente ou criamos um campo para ele
+    await finalizarCompra(localEntrega, WHATS_NUMBER, totalNumero, cupomUsado);
+
+    // 4. Abre o WhatsApp com a mensagem completa
     window.open(`https://wa.me/${WHATS_NUMBER}?text=${encodeURIComponent(msg)}`);
 }
 
