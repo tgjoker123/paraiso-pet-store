@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paraíso Pet Store</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+
+        
+
+/* Barra de Promoção Superior */
+.promo-bar {
+    background: var(--accent); /* Cor laranja/dourada para chamar atenção */
+    color: white;
+    text-align: center;
+    height: var(--promo-bar-height);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    position: sticky;
+    top: 0;
+    z-index: 1001; /* Fica acima do header */
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+}
+
+.promo-bar b {
+    background: white;
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-left: 5px;
+    text-transform: uppercase;
+}
+
+/* Ajuste do header e da barra de promoção */
+header {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    padding: 18px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: var(--promo-bar-height);
+    z-index: 1000;
+}
+
+
+body {
+    cursor: default;
+}
+
+button, .cat-card, .logo {
+    cursor: pointer;
+}
+
+
+/* Estilizando a barra de rolagem das categorias */
+.cat-container::-webkit-scrollbar {
+    height: 6px; /* Altura da barra horizontal */
+}
+
+.cat-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05); /* Cor do fundo da barra */
+    border-radius: 10px;
+}
+
+.cat-container::-webkit-scrollbar-thumb {
+    background: var(--primary); /* Cor da barrinha que mexe */
+    border-radius: 10px;
+}
+
+.cat-container::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary); /* Cor quando passa o mouse */
+}
+
+/* Para navegadores como Firefox */
+.cat-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+        :root {
+            --primary: #2f4f6f;
+            --primary-light: #4a6d8d;
+            --secondary: #2a8a44;
+            --accent: #f39c12;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+            --white: #ffffff;
+            --danger: #e74c3c;
+            --insta: #E1306C;
+            --whats: #25D366;
+            --maps: #4285F4;
+            --shadow: 0 12px 40px rgba(0,0,0,0.12);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --promo-bar-height: 52px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        html { font-size: 16px; }
+        
+        body { 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--light); 
+            color: var(--dark); 
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+            line-height: 1.45;
+            font-size: 0.98rem;
+        }
+
+        .content {
+            flex: 1;
+        }
+
+        footer {
+            width: 100%;
+            background: #2c3e50;
+            color: white;
+            padding: 28px 20px 20px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .footer-grid h2 {
+            margin-bottom: 10px;
+            font-size: 1.7rem;
+        }
+
+        .footer-grid a {
+            margin-right: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-grid iframe {
+            width: 100%;
+            height: 200px;
+            border: 0;
+            border-radius: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            .footer-grid iframe {
+                height: 180px;
+            }
+        }
+
+        .main-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(74, 109, 141, 0.9) 0%, rgba(44, 62, 80, 0.85) 100%),
+                        url('https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; background-position: center; z-index: -1;
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; }
+        .logo i { font-size: 2rem; color: var(--primary); }
+        .logo h1 { font-family: 'Fredoka One', cursive; font-size: 1.9rem; color: var(--primary); letter-spacing: 0.6px; margin:0; }
+
+        .nav-actions { display: flex; gap: 12px; align-items: center; }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            box-shadow: 0 8px 20px rgba(47,79,111,0.08);
+        }
+        
+        .btn-cart { background: var(--secondary); color: white; position: relative; padding: 9px 14px; border-radius: 10px; }
+        .cart-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--accent); color: white;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 50%;
+            border: 2px solid white;
+        }
+        .btn-admin { background: var(--dark); color: white; }
+        .btn-login { background: var(--primary); color: white; }
+        .btn-logout { background: var(--danger); color: white; }
+        .btn-green { background: linear-gradient(90deg,var(--secondary),#3cb270); color: white; width: 100%; justify-content: center; border-radius: 10px; padding: 12px 18px; box-shadow: 0 12px 30px rgba(44,138,68,0.14); }
+
+        .search-box {
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            padding: 8px 18px;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(47,79,111,0.04);
+            border: 1px solid #eef2f5;
+            margin: 0 auto 20px;
+            max-width: 900px;
+        }
+        .search-box input {
+            border: none;
+            outline: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        button, .cat-card, .logo {
+            cursor: pointer;
+        }
+        button:hover, .cat-card:hover, .logo:hover {
+            opacity: 0.95;
+        }
+        button:focus-visible, .cat-card:focus-visible, .logo:focus-visible {
+            outline: 3px solid rgba(33, 150, 243, 0.8);
+            outline-offset: 3px;
+        }
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .cat-container {
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 18px;
+            scrollbar-width: thin;
+        }
+        .cat-card {
+            background: var(--white); padding: 8px 16px; border-radius: 999px;
+            cursor: pointer; white-space: nowrap; font-size: 0.9rem; font-weight: 600;
+            border: 1px solid #f0f2f5; transition: var(--transition);
+        }
+        .cat-card.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .page { display: none; padding: 20px 8% 100px; animation: fadeIn 0.4s ease-in-out; }
+        .active-page { display: block; }
+
+        .products-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .product-card {
+            background: var(--white); border-radius: 18px; padding: 20px;
+            text-align: center; transition: var(--transition); box-shadow: 0 10px 18px rgba(47,79,111,0.04);
+            position: relative; border: 1px solid #f3f6f8;
+        }
+        .product-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(47,79,111,0.06); }
+        .product-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 14px; }
+        .product-card h3 { min-height: 48px; }
+        .product-card .price { font-size:1.5rem; font-weight:800; color:var(--primary); margin:10px 0 }
+        
+        .stock-indicator {
+            position: absolute; top: 20px; left: 20px;
+            padding: 5px 12px; border-radius: 15px; font-size: 0.7rem; font-weight: 700;
+        }
+        .stock-ok { background: #e8f5e9; color: #2e7d32; }
+        .stock-none { background: #ffebee; color: #c62828; }
+
+        .admin-container { max-width: 960px; margin: 0 auto; background: var(--white); padding: 32px; border-radius: 18px; box-shadow: 0 12px 30px rgba(47,79,111,0.05); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .input-field { padding: 12px; border-radius: 12px; border: 2px solid #eee; outline: none; width: 100%; }
+        
+        .inventory-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #f9f9f9; padding: 15px 20px; border-radius: 15px; margin-bottom: 10px;
+            border-left: 5px solid var(--primary);
+        }
+        .btn-edit { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; margin-right: 5px; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
+
+        .cart-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1999; display: none; backdrop-filter: blur(4px); }
+        .cart-sidebar {
+            position: fixed; right: -420px; top: 0; width: 380px; height: 100%;
+            background: var(--white); z-index: 2000; padding: 30px 24px;
+            transition: 0.45s; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(47,79,111,0.08);
+        }
+        .cart-sidebar.open { right: 0; }
+
+        /* Hero principal abaixo do header para impacto visual */
+        .hero {
+            max-width: 1200px; margin: 30px auto; padding: 36px 28px; background: rgba(255,255,255,0.85);
+            border-radius: 20px; display:flex; align-items:center; gap:30px; box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+        }
+
+        @media (max-width: 1000px) {
+            header { padding: 15px 5%; }
+            .page { padding: 20px 5% 100px; }
+            .admin-container { padding: 25px; }
+            .form-row { grid-template-columns: 1fr; }
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+            .cart-sidebar { width: 100%; max-width: 420px; }
+            .search-box { padding: 10px 16px; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="promo-bar">
+    OFERTA ESPECIAL: 10% OFF ATÉ 20/09! Use o cupom: <b>PET10</b>
+</div>
+
+<div class="main-bg"></div>
+
+<header>
+    <a href="#" class="logo" onclick="showPage('page-loja')">
+        <i class="fa-solid fa-paw"></i>
+        <h1>Paraíso Pet Store</h1>
+    </a>
+    <div class="nav-actions">
+        <button type="button" class="btn btn-cart" onclick="toggleCart()" aria-label="Abrir carrinho">
+            <i class="fa-solid fa-shopping-basket"></i>
+            <span id="cart-badge" class="cart-badge">0</span>
+        </button>
+        <button type="button" id="nav-admin" class="btn btn-admin" onclick="attemptAdminAccess()">
+            <i class="fa-solid fa-chart-line"></i>
+        </button>
+        <button type="button" id="nav-login" class="btn btn-login" onclick="showPage('page-auth')">
+            <i class="fa-solid fa-user-circle"></i>
+        </button>
+        <button type="button" id="nav-logout" class="btn btn-logout" style="display:none" onclick="handleLogout()">
+            <i class="fa-solid fa-power-off"></i>
+        </button>
+    </div>
+</header>
+
+<main class="content">
+    <section id="page-loja" class="page active-page">
+    <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="text" id="shop-search" aria-label="Busca de produtos" placeholder="O que seu pet precisa?" onkeyup="filterShop()">
+    </div>
+
+    <div class="cat-container" id="shop-cats">
+        <div class="cat-card active" onclick="filterMain('todos', this)">Todos</div>
+        <div class="cat-card" onclick="filterMain('racoes', this)">Rações</div>
+        <div class="cat-card" onclick="filterMain('remedios', this)">Remédios</div>
+        <div class="cat-card" onclick="filterMain('antiparasitario', this)">Antiparasitários</div>
+        <div class="cat-card" onclick="filterMain('camas', this)">Camas</div>
+        <div class="cat-card" onclick="filterMain('petiscos', this)">Petiscos</div>
+        <div class="cat-card" onclick="filterMain('acessorio', this)">Acessórios</div>
+    </div>
+
+    <div id="sub-cats-container" class="cat-container" style="display: none; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 50px;">
+    </div>
+
+    <div id="shop-container" class="products-grid"></div>
+</section>
+
+<section id="page-admin" class="page">
+    <div class="admin-container">
+        <h2 id="adm-form-title" style="margin-bottom: 20px; color: var(--primary)">Gerenciar Produtos</h2>
+        
+        <button type="button" class="btn" style="margin-bottom:20px; background:#f0f4f8" onclick="showPage('page-loja')">
+             Voltar para loja
+        </button>
+
+        <div style="background: #f0f4f8; padding: 25px; border-radius: 20px; margin-bottom: 30px;">
+            <input type="hidden" id="form-id">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <input type="text" id="form-nome" class="input-field" placeholder="Nome Completo do Produto" aria-label="Nome do produto">
+            </div>
+            <div class="form-row">
+                <select id="form-cat" class="input-field">
+                    <option value="caes">Rações para Cães</option>
+                    <option value="gatos">Rações para Gatos</option>
+                    <option value="remedioscaes">Remédios para Cães</option>
+                    <option value="remediosgatos">Remédios para Gatos</option>
+                    <option value="antiparasitriocaes">Antiparasitários para Cães</option>
+                    <option value="antiparasitriogatos">Antiparasitários para Gatos</option>
+                    <option value="camacao">Camas para Cães</option>
+                    <option value="camagato">Camas para Gatos</option>
+                    <option value="acessoriocao">Acessórios para Cães</option>
+                    <option value="acessoriogato">Acessórios para Gatos</option>
+                    <option value="petiscocae">Petiscos para Cães</option>
+                    <option value="petiscogato">Petiscos para Gatos</option>
+                </select>
+                <input type="number" step="0.01" id="form-preco" class="input-field" placeholder="Preço R$" aria-label="Preço do produto">
+                <input type="number" id="form-estoque" class="input-field" placeholder="Estoque" aria-label="Estoque do produto">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <input type="text" id="form-img" class="input-field" placeholder="Link da Imagem" aria-label="URL da imagem do produto">
+            </div>
+<button type="button" class="btn btn-green" onclick="saveProduct()">Salvar no catálogo</button>
+                <button type="button" id="btn-cancel" class="btn" style="display:none; margin-top:10px; background:#ddd" onclick="resetForm()">Cancelar edição</button>
+        </div>
+
+        <div style="background: #fff3e0; padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #ffe0b2;">
+            <h3 style="margin-bottom: 15px; color: #e65100;"><i class="fa-solid fa-ticket"></i> Novo Cupom de Desconto</h3>
+            <div class="form-row">
+                <input type="text" id="cupom-nome" class="input-field" placeholder="Ex: PET10" aria-label="Nome do cupom">
+                <input type="number" id="cupom-valor" class="input-field" placeholder="Desconto % (Ex: 10)" aria-label="Valor do cupom">
+                <button type="button" class="btn btn-green" onclick="saveCupom()">Criar Cupom</button>
+            </div>
+        </div>
+
+        <hr style="margin-bottom: 30px;">
+
+        <h3 style="margin-bottom: 15px;">Inventário de Itens</h3>
+        <div class="search-box">
+            <i class="fa-solid fa-search" aria-hidden="true"></i>
+            <input type="text" id="admin-search" aria-label="Pesquisar estoque" placeholder="Pesquisar no estoque..." onkeyup="filterAdmin()">
+        </div>
+
+        <div id="admin-inventory-list"></div>
+    </div>
+</section>
+
+<section id="page-auth" class="page">
+    <div class="admin-container" style="max-width: 400px; text-align: center;">
+        <h2>Acesso Administrativo</h2>
+        <input type="text" id="login-user" class="input-field" placeholder="Usuário" style="margin: 20px 0 10px;" aria-label="Usuário administrativo">
+        <input type="password" id="login-pass" class="input-field" placeholder="Senha" style="margin-bottom: 20px;" aria-label="Senha administrativa">
+        <button type="button" class="btn btn-green" onclick="handleLogin()">Entrar</button>
+    </div>
+</section>
+</main>
+
+<div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+<aside class="cart-sidebar" id="cart-sidebar">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px">
+        <h2>Seu Carrinho</h2>
+        <button type="button" onclick="toggleCart()" aria-label="Fechar carrinho" style="background:none; border:none; font-size: 1.5rem; cursor:pointer; color:#555">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div id="cart-items-list" style="flex-grow:1; overflow-y:auto"></div>
+    <div style="border-top: 2px solid #eee; padding-top: 20px;">
+        
+        <div style="display:flex; gap:5px; margin-bottom:15px">
+            <input type="text" id="coupon" placeholder="Cupom de desconto" class="input-field" aria-label="Campo de cupom">
+            <button type="button" class="btn" style="background:var(--primary); color:white" onclick="applyCoupon()">Aplicar cupom</button>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px">
+            <span style="font-weight:600">Total:</span>
+            <span id="cart-total" style="font-size:1.5rem; font-weight:700; color:var(--secondary)">R$ 0,00</span>
+        </div>
+        <button type="button" class="btn btn-green" onclick="checkout()" style="background: #25D366;">
+            <i class="fa-brands fa-whatsapp"></i> Finalizar pedido via WhatsApp
+        </button>
+    </div>
+</aside>
+
+<script>
+// ======================
+// CONFIGURAÇÕES E ESTADO
+// ======================
+const WHATS_NUMBER = "5524992030852";
+let products = JSON.parse(localStorage.getItem('petstore_products')) || [];
+let cupons = JSON.parse(localStorage.getItem('petstore_cupons')) || [];
+let cart = [];
+let currentShopCat = 'todos';
+let currentAdminCat = 'todos';
+let descontoAtivo = 0;
+let cupomAplicadoNome = "";
+
+// --- NAVEGAÇÃO ---
+function showPage(id) {
+    if(id === 'page-admin' && !localStorage.getItem('petstore_session')) {
+        alert('Acesso administrativo restrito. Faça login como administrador.');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById('page-auth').classList.add('active-page');
+        return;
+    }
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+    document.getElementById(id).classList.add('active-page');
+    if(id === 'page-loja') renderShop();
+    if(id === 'page-admin') renderAdmin();
+}
+
+function setCategory(cat, el, context) {
+    const selector = context === 'shop' ? '#shop-cats .cat-card' : '#admin-cats .cat-card';
+    document.querySelectorAll(selector).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    
+    if(context === 'shop') { currentShopCat = cat; renderShop(); }
+    else { currentAdminCat = cat; renderAdmin(); }
+}
+
+function filterShop() { renderShop(); }
+function filterAdmin() { renderAdmin(); }
+
+// ======================
+// RENDERIZA  O DA LOJA
+// ======================
+function renderShop() {
+    const container = document.getElementById('shop-container');
+    const term = document.getElementById('shop-search').value.toLowerCase();
+    container.innerHTML = "";
+
+    products.filter(p => {
+        const searchMatch = p.nome.toLowerCase().includes(term);
+        const categoryMatch = currentShopCat === 'todos' || p.cat === currentShopCat;
+        const parentMatch = subMenuMap[currentShopCat]?.some(sub => sub.id === p.cat);
+        return (categoryMatch || parentMatch) && searchMatch;
+    }).forEach(p => {
+        container.innerHTML += `
+            <div class="product-card">
+                <span class="stock-indicator ${p.estoque > 0 ? 'stock-ok' : 'stock-none'}">${p.estoque > 0 ? 'Disponível' : 'Esgotado'}</span>
+                <img src="${p.img || 'https://via.placeholder.com/200'}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/200'">
+                <h3>${p.nome}</h3>
+                <div style="font-size:1.4rem; font-weight:700; color:var(--primary); margin:10px 0">R$ ${parseFloat(p.preco).toFixed(2)}</div>
+                <button type="button" class="btn btn-green" onclick="addToCart(${p.id})" ${p.estoque <= 0 ? 'disabled' : ''}>Adicionar ao carrinho</button>
+            </div>`;
+    });
+}
+
+// ======================
+// SISTEMA DE CARRINHO
+// ======================
+function toggleCart() {
+    const side = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
+    side.classList.toggle('open');
+    overlay.style.display = side.classList.contains('open') ? 'block' : 'none';
+}
+
+function addToCart(id) {
+    const p = products.find(prod => prod.id == id);
+    const inCart = cart.find(i => i.id == id);
+    if(inCart) inCart.qty++;
+    else cart.push({...p, qty: 1});
+    updateCart();
+    toggleCart(); // Abre a sacola automaticamente
+}
+
+function updateCart() {
+    const list = document.getElementById('cart-items-list');
+    list.innerHTML = "";
+    let subtotal = 0;
+    let count = 0;
+
+    cart.forEach(item => {
+        subtotal += item.preco * item.qty;
+        count += item.qty;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px">
+                <div style="flex:1">
+                    <b>${item.nome}</b><br>
+                    <small>R$ ${item.preco.toFixed(2)}</small>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px">
+                    <button type="button" onclick="changeQty(${item.id}, -1)" style="border:none; background:#eee; width:25px; height:25px; border-radius:5px; cursor:pointer">-</button>
+                    <span>${item.qty}</span>
+                    <button type="button" onclick="changeQty(${item.id}, 1)" style="border:none; background:#eee; width:25px; height:25px; border-radius:5px; cursor:pointer">+</button>
+                    <button type="button" onclick="removeFromCart(${item.id})" style="border:none; color:red; background:none; font-size:1.2rem; cursor:pointer" aria-label="Remover item">×</button>
+                </div>
+            </div>`;
+    });
+
+    let totalFinal = subtotal - (subtotal * (descontoAtivo / 100));
+    document.getElementById('cart-total').innerText = `R$ ${totalFinal.toFixed(2)}`;
+    document.getElementById('cart-badge').innerText = count;
+}
+
+function changeQty(id, delta) {
+    let item = cart.find(i => i.id == id);
+    if(item) {
+        item.qty += delta;
+        if(item.qty <= 0) cart = cart.filter(i => i.id != id);
+        updateCart();
+    }
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(i => i.id != id);
+    updateCart();
+}
+
+function applyCoupon() {
+    const input = document.getElementById('coupon').value.toUpperCase().trim();
+    const cupom = cupons.find(c => c.codigo === input);
+    if(cupom) {
+        descontoAtivo = cupom.valor;
+        cupomAplicadoNome = input;
+        alert(`Cupom ${input} de ${cupom.valor}% aplicado!`);
+    } else {
+        descontoAtivo = 0;
+        cupomAplicadoNome = "";
+        alert("Cupom inválido!");
+    }
+    updateCart();
+}
+
+// ======================
+// FINALIZA  O WHATSAPP
+// ======================
+function checkout() {
+    if(cart.length === 0) return alert("Sua sacola está vazia!");
+    
+    let msg = "NOVO PEDIDO - PARAÍSO PET STORE\n\n";
+    cart.forEach(i => {
+        msg += `  ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`;
+    });
+
+    if(descontoAtivo > 0) {
+        msg += `\n*Cupom Aplicado:* ${cupomAplicadoNome} (-${descontoAtivo}%)`;
+    }
+
+    msg += `\n\n*TOTAL A PAGAR: ${document.getElementById('cart-total').innerText}*`;
+    msg += "\n\nDesejo combinar a entrega/retirada";
+    
+    const encodedMsg = encodeURIComponent(msg);
+    window.open(`https://wa.me/${WHATS_NUMBER}?text=${encodedMsg}`);
+}
+
+// ======================
+// PAINEL ADMINISTRATIVO
+// ======================
+function saveProduct() {
+    const id = document.getElementById('form-id').value;
+    const nome = document.getElementById('form-nome').value;
+    const cat = document.getElementById('form-cat').value;
+    const preco = parseFloat(document.getElementById('form-preco').value);
+    const estoque = parseInt(document.getElementById('form-estoque').value);
+    const img = document.getElementById('form-img').value;
+
+    if(!nome || isNaN(preco)) return alert("Preencha todos os campos corretamente!");
+
+    if(id) {
+        const idx = products.findIndex(p => p.id == id);
+        products[idx] = { id: parseInt(id), nome, cat, preco, estoque, img };
+    } else {
+        products.push({ id: Date.now(), nome, cat, preco, estoque, img });
+    }
+
+    localStorage.setItem('petstore_products', JSON.stringify(products));
+    resetForm();
+    renderAdmin();
+}
+
+// Lógica de Cupons
+function saveCupom() {
+    const nome = document.getElementById('cupom-nome').value.toUpperCase().trim();
+    const valor = parseInt(document.getElementById('cupom-valor').value);
+    if(!nome || isNaN(valor)) return alert("Preencha o nome e o valor do cupom!");
+    
+    cupons.push({codigo: nome, valor: valor});
+    localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
+    document.getElementById('cupom-nome').value = "";
+    document.getElementById('cupom-valor').value = "";
+    renderAdmin();
+    alert("Cupom criado!");
+}
+
+function deleteCupom(index) {
+    if(confirm("Deseja remover este cupom?")) {
+        cupons.splice(index, 1);
+        localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
+        renderAdmin();
+    }
+}
+
+function renderAdmin() {
+    const list = document.getElementById('admin-inventory-list');
+    const term = document.getElementById('admin-search').value.toLowerCase();
+    list.innerHTML = `<h3 style="margin:20px 0 10px">Produtos no Estoque</h3>`;
+
+    // Render Produtos
+    products.filter(p => (currentAdminCat === 'todos' || p.cat === currentAdminCat) && p.nome.toLowerCase().includes(term))
+    .forEach(p => {
+        list.innerHTML += `
+            <div class="inventory-card">
+                <div style="display:flex; align-items:center; gap:15px">
+                    <img src="${p.img}" alt="${p.nome}" style="width:40px;height:40px;object-fit:contain">
+                    <div><b>${p.nome}</b><br><small>R$ ${p.preco.toFixed(2)} | Est: ${p.estoque}</small></div>
+                </div>
+                <div>
+                    <button type="button" class="btn-edit" onclick="editProduct(${p.id})">Editar</button>
+                    <button type="button" class="btn-del" onclick="deleteProduct(${p.id})">Remover</button>
+                </div>
+            </div>`;
+    });
+
+    // Render Cupons
+    list.innerHTML += `<h3 style="margin: 30px 0 10px; color: var(--primary)">Cupons de Desconto Ativos</h3>`;
+    if(cupons.length === 0) list.innerHTML += `<p>Nenhum cupom cadastrado.</p>`;
+    cupons.forEach((c, index) => {
+        list.innerHTML += `
+            <div class="inventory-card" style="border-left: 5px solid var(--accent)">
+                <span><i class="fa-solid fa-tag"></i> <b>${c.codigo}</b> - Desconto de ${c.valor}%</span>
+                <button type="button" class="btn-del" onclick="deleteCupom(${index})">Excluir</button>
+            </div>`;
+    });
+}
+
+function editProduct(id) {
+    const p = products.find(prod => prod.id == id);
+    document.getElementById('form-id').value = p.id;
+    document.getElementById('form-nome').value = p.nome;
+    document.getElementById('form-cat').value = p.cat;
+    document.getElementById('form-preco').value = p.preco;
+    document.getElementById('form-estoque').value = p.estoque;
+    document.getElementById('form-img').value = p.img;
+    document.getElementById('adm-form-title').innerText = "Editando: " + p.nome;
+    document.getElementById('btn-cancel').style.display = "inline-block";
+    window.scrollTo(0,0);
+}
+
+function resetForm() {
+    document.getElementById('form-id').value = "";
+    document.getElementById('form-nome').value = "";
+    document.getElementById('form-preco').value = "";
+    document.getElementById('form-estoque').value = "";
+    document.getElementById('form-img').value = "";
+    document.getElementById('adm-form-title').innerText = "Gerenciar Produtos";
+    document.getElementById('btn-cancel').style.display = "none";
+}
+
+function deleteProduct(id) {
+    if(confirm("Excluir este produto permanentemente?")) {
+        products = products.filter(p => p.id != id);
+        localStorage.setItem('petstore_products', JSON.stringify(products));
+        renderAdmin();
+    }
+}
+
+// ======================
+// LOGIN E INICIALIZA  O
+// ======================
+async function hashPassword(password) {
+    const enc = new TextEncoder();
+    const data = enc.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function createAdmin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+    if(!u || !p) return alert('Preencha usuário e senha para criar o administrador.');
+    if(localStorage.getItem('petstore_admin')) return alert('Administrador já cadastrado. Faça login.');
+    const hash = await hashPassword(p);
+    localStorage.setItem('petstore_admin', JSON.stringify({ user: u, hash }));
+    localStorage.setItem('petstore_session', 'true');
+    alert('Administrador criado com sucesso.');
+    location.reload();
+}
+
+async function handleLogin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+    const adminRaw = localStorage.getItem('petstore_admin');
+    if(!adminRaw) return alert('Nenhum administrador cadastrado. Crie um administrador primeiro.');
+    const admin = JSON.parse(adminRaw);
+    const hash = await hashPassword(p);
+    if(u === admin.user && hash === admin.hash) {
+        localStorage.setItem('petstore_session', 'true');
+        location.reload();
+    } else alert("Usuário ou senha inválidos!");
+}
+
+// Seed admin via console (owner only). Usage: window.seedAdmin('usuario','senha')
+async function seedAdmin(u, p) {
+    if(!u || !p) return console.error('Use: window.seedAdmin("usuario","senha")');
+    if(localStorage.getItem('petstore_admin')) return console.warn('Administrador já existe.');
+    const hash = await hashPassword(p);
+    localStorage.setItem('petstore_admin', JSON.stringify({ user: u, hash }));
+    console.info('Administrador criado com sucesso. Faça login com as credenciais informadas.');
+}
+
+// --- Controle de navegação e admin ---
+function attemptAdminAccess() {
+    if (localStorage.getItem('petstore_session')) {
+        showPage('page-admin');
+    } else {
+        alert('Acesso administrativo restrito. Faça login como administrador.');
+        showPage('page-auth');
+    }
+}
+
+// --- TOKEN ADMIN VIA URL (uso temporário e seguro) ---
+// Armazena hash do token em localStorage (use no console apenas): window.setAdminToken('SEU_TOKEN', dias)
+async function setAdminToken(token, days = 1) {
+    if(!token) return console.error('Informe um token.');
+    const hash = await hashPassword(token);
+    const expires = Date.now() + (days * 24 * 60 * 60 * 1000);
+    localStorage.setItem('petstore_admin_token', JSON.stringify({ hash, expires }));
+    console.info('Hash do token salvo. Abra o site com ?admin=SEU_TOKEN para ativar (uso único recomendado).');
+}
+window.setAdminToken = setAdminToken;
+
+async function createAdminFromToken() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+    if(!u || !p) return alert('Preencha usuário e senha para criar o administrador.');
+    if(localStorage.getItem('petstore_admin')) return alert('Administrador já cadastrado. Faça login.');
+    const hash = await hashPassword(p);
+    localStorage.setItem('petstore_admin', JSON.stringify({ user: u, hash }));
+    // remover token após uso
+    localStorage.removeItem('petstore_admin_token');
+    localStorage.setItem('petstore_session', 'true');
+    alert('Administrador criado com sucesso. Você já está logado.');
+    location.reload();
+}
+
+async function validateAdminTokenFromURL() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('admin');
+        if(!token) return false;
+        const raw = localStorage.getItem('petstore_admin_token');
+        if(!raw) return false;
+        const stored = JSON.parse(raw);
+        if(stored.expires && Date.now() > stored.expires) { localStorage.removeItem('petstore_admin_token'); return false; }
+        const hash = await hashPassword(token);
+        if(hash === stored.hash) {
+            // habilita criação temporária no UI
+            const authBtn = document.querySelector('#page-auth .btn-green');
+            if(authBtn) {
+                authBtn.disabled = false;
+                authBtn.title = 'Token verificado. Crie o administrador.';
+                authBtn.innerText = 'Criar Admin';
+                authBtn.onclick = createAdminFromToken;
+            }
+            const note = document.getElementById('admin-create-note');
+            if(note) note.innerText = 'Token válido — preencha usuário e senha para criar o administrador. O token será removido após uso.';
+            return true;
+        }
+    } catch(e) { console.error(e); }
+    return false;
+}
+
+function handleLogout() {
+    localStorage.removeItem('petstore_session');
+    location.reload();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if(localStorage.getItem('petstore_session')) {
+        document.getElementById('nav-admin').style.display = 'block';
+        document.getElementById('nav-logout').style.display = 'block';
+        document.getElementById('nav-login').style.display = 'none';
+    }
+    renderShop();
+
+    // Segurança: não permitir criação pública de administrador via UI.
+    // Se não há admin cadastrado, instruções aparecem (somente para o proprietário).
+    if(!localStorage.getItem('petstore_admin')) {
+        const authTitle = document.querySelector('#page-auth h2');
+        if(authTitle) authTitle.innerText = 'Administrador não configurado';
+        const authBtn = document.querySelector('#page-auth .btn-green');
+        if(authBtn) {
+            authBtn.innerText = 'Entrar';
+            authBtn.onclick = handleLogin;
+            authBtn.disabled = true;
+            authBtn.title = 'Administrador não configurado. Use console para registrar o administrador.';
+        }
+        const container = document.querySelector('#page-auth .admin-container');
+        if(container && !document.getElementById('admin-create-note')) {
+            const note = document.createElement('p');
+            note.id = 'admin-create-note';
+            note.style.marginTop = '10px';
+            note.style.fontSize = '0.9rem';
+            note.style.opacity = '0.95';
+            note.innerText = 'Administrador não configurado. Para configurar o administrador, abra o console do navegador e execute: window.setAdminToken("SEU_TOKEN_SECRETO", 1)';
+            container.appendChild(note);
+        }
+    }
+
+    // Rodapé Automático
+    let footer = document.createElement("footer");
+    footer.innerHTML = `
+    <div class="footer-grid">
+        <div>
+            <h2>Paraíso Pet Store</h2>
+            <p style="margin:10px 0 20px; font-size:1rem; opacity:0.9">Valparaíso Pet Store<br>R. Gonçalves Dias, 435 - Valparaíso, Petrópolis - RJ, 25655-122, Brasil</p>
+            <div style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                <a href="https://instagram.com/paraisopetstore.oficial" target="_blank"><i class="fa-brands fa-instagram" style="margin-right:8px;"></i>Instagram</a>
+                <a href="https://wa.me/${WHATS_NUMBER}" target="_blank"><i class="fa-brands fa-whatsapp" style="margin-right:8px;"></i>WhatsApp</a>
+            </div>
+            <p style="font-size:0.95rem; opacity:0.8; line-height:1.6">Aqui você encontra tudo para o seu pet. Nossa loja está localizada no coração de Petrópolis e atendemos também pelo WhatsApp.</p>
+        </div>
+        <div>
+            <iframe src="https://maps.google.com/maps?q=Valpara%C3%ADso%20Pet%20Store%2C%20R.%20Gon%C3%A7alves%20Dias%20435%2C%20Valpara%C3%ADso%2C%20Petr%C3%B3polis%20-%20RJ%2C%2025655-122%2C%20Brasil&t=&z=15&ie=UTF8&iwloc=&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+    </div>
+    <p style="margin-top:28px; text-align:center; font-size:0.8rem; opacity:0.6">© 2024 Paraíso Pet Store. Todos os direitos reservados.</p>`;
+    document.body.appendChild(footer);
+    
+    // Se houver token na URL e hash armazenado, habilita criação temporária
+    validateAdminTokenFromURL();
+});
+
+// --- MENU DE SUBCATEGORIAS ---
+
+const subMenuMap = {
+    'racoes': [
+        { nome: 'Para Cães', id: 'caes' },
+        { nome: 'Para Gatos', id: 'gatos' }
+    ],
+    'remedios': [
+        { nome: 'Para Cães', id: 'remedioscaes' },
+        { nome: 'Para Gatos', id: 'remediosgatos' }
+    ],
+    'antiparasitario': [
+        { nome: 'Para Cães', id: 'antiparasitriocaes' },
+        { nome: 'Para Gatos', id: 'antiparasitriogatos' }
+    ],
+    'camas': [
+        { nome: 'Para Cães', id: 'camacao' },
+        { nome: 'Para Gatos', id: 'camagato' }
+    ],
+    'petiscos': [
+        { nome: 'Para Cães', id: 'petiscocao' },
+        { nome: 'Para Gatos', id: 'petiscogato' }
+    ],
+    'acessorio': [
+        { nome: 'Para Cães', id: 'acessoriocao' },
+        { nome: 'Para Gatos', id: 'acessoriogato' }
+   ]
+};
+
+function filterMain(mainCat, el) {
+    // 1. Estilização dos botões principais
+    document.querySelectorAll('#shop-cats .cat-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+
+    const subContainer = document.getElementById('sub-cats-container');
+    
+    if (mainCat === 'todos' || !subMenuMap[mainCat]) {
+        // Se for "Todos" ou "Acessórios", esconde a barra de baixo
+        subContainer.style.display = 'none';
+        setCategory(mainCat, el, 'shop'); 
+    } else {
+        // Mostra a barra de subcategorias
+        subContainer.style.display = 'flex';
+        subContainer.innerHTML = '';
+        
+        subMenuMap[mainCat].forEach(sub => {
+            const btn = document.createElement('div');
+            btn.className = 'cat-card';
+            btn.innerHTML = sub.nome;
+            btn.onclick = function() {
+                document.querySelectorAll('#sub-cats-container .cat-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                setCategory(sub.id, this, 'shop');
+            };
+            subContainer.appendChild(btn);
+        });
+
+        // Filtra pela categoria pai (mostra tudo daquela categoria antes de escolher o bicho)
+        setCategory(mainCat, el, 'shop');
+    }
+}
+
+</script>
+</body>
+</html>
