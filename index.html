@@ -676,17 +676,59 @@ async function saveProduct() {
     showPage('page-loja');
 }
 
-function saveCupom() {
-    const nome = document.getElementById('cupom-nome').value.toUpperCase().trim();
-    const valor = parseInt(document.getElementById('cupom-valor').value);
-    if(!nome || isNaN(valor)) return alert("Preencha o nome e o valor do cupom!");
-    
-    cupons.push({codigo: nome, valor: valor});
-    localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
-    document.getElementById('cupom-nome').value = "";
-    document.getElementById('cupom-valor').value = "";
-    renderAdmin();
-    alert("Cupom criado!");
+async function saveCupom() {
+    alert("1. Botão clicado com sucesso!");
+
+    const codigoInput = document.getElementById('input-codigo-cupom'); 
+    const descontoInput = document.getElementById('input-desconto-cupom');
+
+    // Validação dos elementos na tela
+    if (!codigoInput) {
+        alert("Erro: O seu HTML não tem nenhum elemento com id='input-codigo-cupom'");
+        return;
+    }
+    if (!descontoInput) {
+        alert("Erro: O seu HTML não tem nenhum elemento com id='input-desconto-cupom'");
+        return;
+    }
+
+    const codigo = codigoInput.value.trim().toUpperCase();
+    const desconto = parseFloat(descontoInput.value);
+
+    alert(`2. Dados capturados da tela -> Código: ${codigo} | Desconto: ${desconto}`);
+
+    if (!codigo || isNaN(desconto)) {
+        alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
+        return;
+    }
+
+    try {
+        alert("3. Tentando enviar dados para o Supabase...");
+        
+        const { data, error } = await db
+            .from('cupons')
+            .insert([{ codigo: codigo, desconto: desconto }]);
+
+        if (error) {
+            if (error.code === '23505') {
+                alert("Já existe um cupom cadastrado com este código!");
+                return;
+            }
+            throw error;
+        }
+
+        alert("4. Sucesso! Cupom gravado no Supabase.");
+        
+        // Limpa os campos do formulário
+        codigoInput.value = '';
+        descontoInput.value = '';
+
+        // Atualiza a listagem na tela
+        renderCupons();
+    } catch (error) {
+        alert("Erro crítico no Supabase: " + error.message);
+        console.error("Erro completo:", error);
+    }
 }
 
 function deleteCupom(index) {
