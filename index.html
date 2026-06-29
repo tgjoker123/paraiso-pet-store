@@ -676,26 +676,66 @@ async function saveProduct() {
     showPage('page-loja');
 }
 
+// ==========================================
+// GERENCIAMENTO DE CUPONS (SUPABASE)
+// ==========================================
+
+// 1. FUNÇÃO PARA CARREGAR E EXIBIR OS CUPONS NA TELA
+async function renderCupons() {
+    const listaDiv = document.getElementById('cupons-lista');
+    if (!listaDiv) return;
+
+    try {
+        const { data: listaDeCupons, error } = await db
+            .from('cupons')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        listaDiv.innerHTML = '';
+
+        if (listaDeCupons.length === 0) {
+            listaDiv.innerHTML = '<p style="color: gray; font-style: italic; padding: 10px;">Nenhum cupom ativo no momento.</p>';
+            return;
+        }
+
+        listaDeCupons.forEach(cupom => {
+            listaDiv.innerHTML += `
+                <div class="inventory-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #ddd; margin-bottom: 8px; background: #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div>
+                        <b style="color: #1a365d; font-size: 1.1em;">${cupom.codigo}</b><br>
+                        <small style="color: #4a5568;">Desconto: ${cupom.desconto}%</small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-edit" onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})">Editar</button>
+                        <button type="button" class="btn-del" onclick="removerCupom(${cupom.id})">Remover</button>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Erro ao carregar cupons:", error.message);
+    }
+}
+
+// 2. FUNÇÃO ACIONADA PELO BOTÃO VERDE "CRIAR CUPOM"
 async function saveCupom() {
     alert("1. Botão clicado com sucesso!");
 
-    const codigoInput = document.getElementById('input-codigo-cupom'); 
-    const descontoInput = document.getElementById('input-desconto-cupom');
+    // ATENÇÃO: Se não funcionar, verifique se os IDs no seu HTML não são 'cupom-codigo' ou algo parecido!
+    let codigoInput = document.getElementById('input-codigo-cupom') || document.querySelector('input[placeholder*="PET10"]'); 
+    let descontoInput = document.getElementById('input-desconto-cupom') || document.querySelector('input[placeholder*="10"]');
 
-    // Validação dos elementos na tela
-    if (!codigoInput) {
-        alert("Erro: O seu HTML não tem nenhum elemento com id='input-codigo-cupom'");
-        return;
-    }
-    if (!descontoInput) {
-        alert("Erro: O seu HTML não tem nenhum elemento com id='input-desconto-cupom'");
+    if (!codigoInput || !descontoInput) {
+        alert("Erro: O script não conseguiu encontrar os campos de texto no HTML. Verifique os IDs dos inputs!");
         return;
     }
 
     const codigo = codigoInput.value.trim().toUpperCase();
     const desconto = parseFloat(descontoInput.value);
 
-    alert(`2. Dados capturados da tela -> Código: ${codigo} | Desconto: ${desconto}`);
+    alert(`2. Dados capturados -> Código: ${codigo} | Desconto: ${desconto}`);
 
     if (!codigo || isNaN(desconto)) {
         alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
@@ -703,7 +743,7 @@ async function saveCupom() {
     }
 
     try {
-        alert("3. Tentando enviar dados para o Supabase...");
+        alert("3. Enviando para o Supabase...");
         
         const { data, error } = await db
             .from('cupons')
@@ -719,26 +759,68 @@ async function saveCupom() {
 
         alert("4. Sucesso! Cupom gravado no Supabase.");
         
-        // Limpa os campos do formulário
         codigoInput.value = '';
         descontoInput.value = '';
 
-        // Atualiza a listagem na tela
-        renderCupons();
+        // Recarrega a lista na tela
+        await renderCupons();
     } catch (error) {
         alert("Erro crítico no Supabase: " + error.message);
         console.error("Erro completo:", error);
     }
 }
 
-function deleteCupom(index) {
-    if(confirm("Deseja remover este cupom?")) {
-        cupons.splice(index, 1);
-        localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
-        renderAdmin();
+// 3. FUNÇÃO PARA EXCLUIR UM CUPOM
+async function removerCupom(id) {
+    if (!confirm("Tem certeza que deseja excluir este cupom de desconto?")) return;
+
+    try {
+        const { error } = await db
+            .from('cupons')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        alert("Cupom removido!");
+        await renderCupons(); 
+    } catch (error) {
+        alert("Erro ao remover cupom: " + error.message);
     }
 }
 
+// 4. FUNÇÃO PARA EDITAR UM CUPOM
+async function editarCupom(id, codigoAtual, descontoAtual) {
+    const novoCodigo = prompt("Digite o novo código do cupom:", codigoAtual);
+    if (novoCodigo === null) return; 
+
+    const novoDescontoTexto = prompt("Digite a nova porcentagem de desconto:", descontoAtual);
+    if (novoDescontoTexto === null) return; 
+    
+    const novoDesconto = parseFloat(novoDescontoTexto);
+
+    if (!novoCodigo.trim() || isNaN(novoDesconto)) {
+        return alert("Valores inválidos inseridos. Edição cancelada.");
+    }
+
+    try {
+        const { error } = await db
+            .from('cupons')
+            .update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        alert("Cupom editado com sucesso!");
+        await renderCupons(); 
+    } catch (error) {
+        alert("Erro ao editar cupom: " + error.message);
+    }
+}
+
+// ==========================================
+// FUNÇÕES DE GERENCIAMENTO JÁ EXISTENTES
+// ==========================================
 function renderAdmin() {
     const list = document.getElementById('admin-inventory-list');
     if(!list) return;
@@ -788,9 +870,6 @@ async function deleteProduct(id) {
     }
 }
 
-// ======================
-// AUTENTICAÇÃO LOCAL
-// ======================
 async function hashPassword(password) {
     const enc = new TextEncoder();
     const data = enc.encode(password);
@@ -839,10 +918,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     loadProductsFromSupabase();
-    renderCupons(); // <-- Adicione esta linha bem aqui!
+    renderCupons(); 
 });
 
-// --- MAPA DE SUBCATEGORIAS ---
 const subMenuMap = {
     'racoes': [{ nome: 'Para Cães', id: 'caes' }, { nome: 'Para Gatos', id: 'gatos' }],
     'remedios': [{ nome: 'Para Cães', id: 'remedioscaes' }, { nome: 'Para Gatos', id: 'remediosgatos' }],
@@ -887,7 +965,7 @@ async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupo
                 { 
                     cliente_nome: nomeCliente, 
                     whatsapp: whatsCliente, 
-                    produtos_comprados: cart, // Seu array do carrinho
+                    produtos_comprados: cart, 
                     total: totalComDesconto,
                     cupom_aplicado: cupom
                 }
@@ -899,141 +977,3 @@ async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupo
         console.error("Erro ao salvar pedido:", error.message);
     }
 }
-
-// ==========================================
-// GERENCIAMENTO DE CUPONS (SUPABASE)
-// ==========================================
-
-// 1. FUNÇÃO PARA CARREGAR E EXIBIR OS CUPONS NA TELA
-async function renderCupons() {
-    const listaDiv = document.getElementById('cupons-lista');
-    if (!listaDiv) return;
-
-    try {
-        // Busca todos os cupons direto do Supabase
-        const { data: listaDeCupons, error } = await db
-            .from('cupons')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Limpa a lista antes de desenhar os cupons atualizados
-        listaDiv.innerHTML = '';
-
-        if (listaDeCupons.length === 0) {
-            listaDiv.innerHTML = '<p style="color: gray; font-style: italic;">Nenhum cupom ativo no momento.</p>';
-            return;
-        }
-
-        // Desenha cada cupom seguindo a mesma estrutura e estilo do seu inventário
-        listaDeCupons.forEach(cupom => {
-            listaDiv.innerHTML += `
-                <div class="produto-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 8px; background: #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div>
-                        <strong style="color: #1a365d;">${cupom.codigo}</strong> 
-                        <span style="color: #4a5568; margin-left: 10px;">| Desconto: ${cupom.desconto}%</span>
-                    </div>
-                    <div>
-                        <button onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})" style="background-color: #2b6cb0; color: white; border: none; padding: 5px 12px; margin-right: 5px; border-radius: 4px; cursor: pointer;">Editar</button>
-                        <button onclick="removerCupom(${cupom.id})" style="background-color: #e53e3e; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Remover</button>
-                    </div>
-                </div>
-            `;
-        });
-    } catch (error) {
-        console.error("Erro ao carregar cupons:", error.message);
-    }
-}
-
-// 2. FUNÇÃO PARA CRIAR UM NOVO CUPOM NO BANCO
-async function criarCupom() {
-    // Pegue os IDs correspondentes aos seus inputs reais da tela
-    // Substitua 'input-codigo-cupom' e 'input-desconto-cupom' pelos IDs que você usou no seu HTML
-    const codigoInput = document.getElementById('input-codigo-cupom'); 
-    const descontoInput = document.getElementById('input-desconto-cupom');
-
-    if (!codigoInput || !descontoInput) return;
-
-    const codigo = codigoInput.value.trim().toUpperCase();
-    const desconto = parseFloat(descontoInput.value);
-
-    if (!codigo || isNaN(desconto)) {
-        return alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
-    }
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .insert([{ codigo: codigo, desconto: desconto }]);
-
-        if (error) {
-            if (error.code === '23505') { // Código de erro do Postgres para item duplicado
-                return alert("Já existe um cupom cadastrado com este código!");
-            }
-            throw error;
-        }
-
-        alert("Cupom criado com sucesso!");
-        
-        // Limpa os campos do formulário
-        codigoInput.value = '';
-        descontoInput.value = '';
-
-        // Atualiza a listagem na tela na hora
-        renderCupons();
-    } catch (error) {
-        alert("Erro ao criar cupom: " + error.message);
-    }
-}
-
-// 3. FUNÇÃO PARA EXCLUIR UM CUPOM
-async function removerCupom(id) {
-    if (!confirm("Tem certeza que deseja excluir este cupom de desconto?")) return;
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-
-        alert("Cupom removido!");
-        renderCupons(); // Atualiza a tela
-    } catch (error) {
-        alert("Erro ao remover cupom: " + error.message);
-    }
-}
-
-// 4. FUNÇÃO PARA EDITAR UM CUPOM EXISTENTE
-async function editarCupom(id, codigoAtual, descontoAtual) {
-    const novoCodigo = prompt("Digite o novo código do cupom:", codigoAtual);
-    if (novoCodigo === null) return; // Se cancelar, para
-
-    const novoDescontoTexto = prompt("Digite a nova porcentagem de desconto:", descontoAtual);
-    if (novoDescontoTexto === null) return; // Se cancelar, para
-    
-    const novoDesconto = parseFloat(novoDescontoTexto);
-
-    if (!novoCodigo.trim() || isNaN(novoDesconto)) {
-        return alert("Valores inválidos inseridos. Edição cancelada.");
-    }
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        alert("Cupom editado com sucesso!");
-        renderCupons(); // Atualiza a tela
-    } catch (error) {
-        alert("Erro ao editar cupom: " + error.message);
-    }
-}
-</script>
-</body>
-</html>
