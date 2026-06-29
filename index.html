@@ -822,6 +822,27 @@ function filterMain(mainCat, el) {
         setCategory(mainCat, el, 'shop');
     }
 }
+
+async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupom) {
+    try {
+        const { data, error } = await db
+            .from('pedidos')
+            .insert([
+                { 
+                    cliente_nome: nomeCliente, 
+                    whatsapp: whatsCliente, 
+                    produtos_comprados: cart, // Seu array do carrinho
+                    total: totalComDesconto,
+                    cupom_aplicado: cupom
+                }
+            ]);
+
+        if (error) throw error;
+        alert("Pedido registrado com sucesso!");
+    } catch (error) {
+        console.error("Erro ao salvar pedido:", error.message);
+    }
+}
 </script>
 </body>
 </html>
