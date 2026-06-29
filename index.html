@@ -256,11 +256,11 @@
         .product-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(47,79,111,0.06); }
         .product-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 14px; }
         .product-card h3 { min-height: 48px; }
-        .product-card .price { font-size:1.5rem; font-weight:800; color:var(--primary); margin:10px 0 }
         
         .stock-indicator {
             position: absolute; top: 20px; left: 20px;
             padding: 5px 12px; border-radius: 15px; font-size: 0.7rem; font-weight: 700;
+            z-index: 10;
         }
         .stock-ok { background: #e8f5e9; color: #2e7d32; }
         .stock-none { background: #ffebee; color: #c62828; }
@@ -284,11 +284,6 @@
             transition: 0.45s; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(47,79,111,0.08);
         }
         .cart-sidebar.open { right: 0; }
-
-        .hero {
-            max-width: 1200px; margin: 30px auto; padding: 36px 28px; background: rgba(255,255,255,0.85);
-            border-radius: 20px; display:flex; align-items:center; gap:30px; box-shadow: 0 20px 60px rgba(0,0,0,0.06);
-        }
 
         @media (max-width: 1000px) {
             header { padding: 15px 5%; }
@@ -350,8 +345,7 @@
             <div class="cat-card" onclick="filterMain('acessorio', this)">Acessórios</div>
         </div>
 
-        <div id="sub-cats-container" class="cat-container" style="display: none; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 50px;">
-        </div>
+        <div id="sub-cats-container" class="cat-container" style="display: none; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 50px;"></div>
 
         <div id="shop-container" class="products-grid"></div>
     </section>
@@ -381,7 +375,7 @@
                         <option value="camagato">Camas para Gatos</option>
                         <option value="acessoriocao">Acessórios para Cães</option>
                         <option value="acessoriogato">Acessórios para Gatos</option>
-                        <option value="petiscocae">Petiscos para Cães</option>
+                        <option value="petiscocao">Petiscos para Cães</option>
                         <option value="petiscogato">Petiscos para Gatos</option>
                     </select>
                     <input type="number" step="0.01" id="form-preco" class="input-field" placeholder="Preço R$" aria-label="Preço do produto">
@@ -404,27 +398,20 @@
             </div>
 
             <hr style="margin-bottom: 30px;">
-<div class="caixa-cupom-amarela"> 
-    <h2>Novo Cupom de Desconto</h2>
-    </div> 
 
-<div class="cupons-container" style="margin-top: 20px; margin-bottom: 20px; padding: 0 20px;">
-    <h3 style="margin-bottom: 10px; color: #1a365d;">Cupons Ativos</h3>
-    <div id="cupons-lista">
-        </div>
-</div>
-
-<div class="inventario-container">
-    <h2>Inventário de Itens</h2>
-    </div>
-
-            <h3 style="margin-bottom: 15px;">Inventário de Itens</h3>
-            <div class="search-box">
-                <i class="fa-solid fa-search" aria-hidden="true"></i>
-                <input type="text" id="admin-search" aria-label="Pesquisar estoque" placeholder="Pesquisar no estoque..." onkeyup="filterAdmin()">
+            <div class="cupons-container" style="margin-top: 20px; margin-bottom: 30px;">
+                <h3 style="margin-bottom: 15px; color: #1a365d;"><i class="fa-solid fa-tags"></i> Cupons Ativos no Banco</h3>
+                <div id="cupons-lista"></div>
             </div>
 
-            <div id="admin-inventory-list"></div>
+            <div class="inventario-container" style="margin-top: 20px;">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-boxes-stacked"></i> Inventário de Itens</h3>
+                <div class="search-box">
+                    <i class="fa-solid fa-search" aria-hidden="true"></i>
+                    <input type="text" id="admin-search" aria-label="Pesquisar estoque" placeholder="Pesquisar no estoque..." onkeyup="filterAdmin()">
+                </div>
+                <div id="admin-inventory-list"></div>
+            </div>
         </div>
     </section>
 
@@ -450,7 +437,7 @@
     <div style="border-top: 2px solid #eee; padding-top: 20px;">
         <div style="display:flex; gap:5px; margin-bottom:15px">
             <input type="text" id="coupon" placeholder="Cupom de desconto" class="input-field" aria-label="Campo de cupom">
-            <button type="button" class="btn" style="background:var(--primary); color:white" onclick="applyCoupon()">Aplicar cupom</button>
+            <button type="button" class="btn" style="background:var(--primary); color:white" onclick="applyCoupon()">Aplicar</button>
         </div>
 
         <div style="display:flex; justify-content:space-between; margin-bottom:20px">
@@ -476,12 +463,21 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const WHATS_NUMBER = "5524992030852";
 let products = []; 
-let cupons = JSON.parse(localStorage.getItem('petstore_cupons')) || [];
 let cart = [];
 let currentShopCat = 'todos';
 let currentAdminCat = 'todos';
 let descontoAtivo = 0;
 let cupomAplicadoNome = "";
+
+// MAPA DE SUBCATEGORIAS
+const subMenuMap = {
+    'racoes': [{ nome: 'Para Cães', id: 'caes' }, { nome: 'Para Gatos', id: 'gatos' }],
+    'remedios': [{ nome: 'Para Cães', id: 'remedioscaes' }, { nome: 'Para Gatos', id: 'remediosgatos' }],
+    'antiparasitario': [{ nome: 'Para Cães', id: 'antiparasitriocaes' }, { nome: 'Para Gatos', id: 'antiparasitriogatos' }],
+    'camas': [{ nome: 'Para Cães', id: 'camacao' }, { nome: 'Para Gatos', id: 'camagato' }],
+    'petiscos': [{ nome: 'Para Cães', id: 'petiscocao' }, { nome: 'Para Gatos', id: 'petiscogato' }],
+    'acessorio': [{ nome: 'Para Cães', id: 'acessoriocao' }, { nome: 'Para Gatos', id: 'acessoriogato' }]
+};
 
 // --- BUSCAR PRODUTOS DA SUPABASE ---
 async function loadProductsFromSupabase() {
@@ -516,20 +512,43 @@ function showPage(id) {
     if(targetPage) targetPage.classList.add('active-page');
     
     if(id === 'page-loja') renderShop();
-    if(id === 'page-admin') renderAdmin();
+    if(id === 'page-admin') { renderAdmin(); renderCupons(); }
 }
 
 function setCategory(cat, el, context) {
-    const selector = context === 'shop' ? '#shop-cats .cat-card' : '#admin-cats .cat-card';
-    document.querySelectorAll(selector).forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    
     if(context === 'shop') { currentShopCat = cat; renderShop(); }
     else { currentAdminCat = cat; renderAdmin(); }
 }
 
 function filterShop() { renderShop(); }
 function filterAdmin() { renderAdmin(); }
+
+function filterMain(mainCat, el) {
+    document.querySelectorAll('#shop-cats .cat-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const subContainer = document.getElementById('sub-cats-container');
+    if(!subContainer) return;
+    
+    if (mainCat === 'todos' || !subMenuMap[mainCat]) {
+        subContainer.style.display = 'none';
+        setCategory(mainCat, el, 'shop'); 
+    } else {
+        subContainer.style.display = 'flex';
+        subContainer.innerHTML = '';
+        subMenuMap[mainCat].forEach(sub => {
+            const btn = document.createElement('div');
+            btn.className = 'cat-card';
+            btn.innerHTML = sub.nome;
+            btn.onclick = function() {
+                document.querySelectorAll('#sub-cats-container .cat-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                setCategory(sub.id, this, 'shop');
+            };
+            subContainer.appendChild(btn);
+        });
+        setCategory(mainCat, el, 'shop');
+    }
+}
 
 // ======================
 // RENDERIZAÇÃO DA LOJA
@@ -623,30 +642,64 @@ function removeFromCart(id) {
     updateCart();
 }
 
-function applyCoupon() {
+async function applyCoupon() {
     const input = document.getElementById('coupon').value.toUpperCase().trim();
-    const cupom = cupons.find(c => c.codigo === input);
-    if(cupom) {
-        descontoAtivo = cupom.valor;
-        cupomAplicadoNome = input;
-        alert(`Cupom ${input} de ${cupom.valor}% aplicado!`);
-    } else {
-        descontoAtivo = 0;
-        cupomAplicadoNome = "";
-        alert("Cupom inválido!");
+    if(!input) return alert("Digite um cupom!");
+
+    try {
+        const { data, error } = await db
+            .from('cupons')
+            .select('*')
+            .eq('codigo', input)
+            .single();
+
+        if(error || !data) {
+            descontoAtivo = 0;
+            cupomAplicadoNome = "";
+            alert("Cupom inválido ou expirado!");
+        } else {
+            descontoAtivo = data.desconto;
+            cupomAplicadoNome = input;
+            alert(`Cupom ${input} de ${data.desconto}% aplicado com sucesso!`);
+        }
+        updateCart();
+    } catch (err) {
+        console.error(err);
     }
-    updateCart();
 }
 
-function checkout() {
+async function checkout() {
     if(cart.length === 0) return alert("Sua sacola está vazia!");
+    
+    let subtotal = cart.reduce((acc, curr) => acc + (curr.preco * curr.qty), 0);
+    let totalFinal = subtotal - (subtotal * (descontoAtivo / 100));
+
     let msg = "NOVO PEDIDO - PARAÍSO PET STORE\n\n";
     cart.forEach(i => {
-        msg += `  ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`;
+        msg += ` 🐾 ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`;
     });
     if(descontoAtivo > 0) msg += `\n*Cupom:* ${cupomAplicadoNome} (-${descontoAtivo}%)`;
-    msg += `\n\n*TOTAL: ${document.getElementById('cart-total').innerText}*`;
+    msg += `\n\n*TOTAL: R$ ${totalFinal.toFixed(2)}*`;
+
+    // Salva de forma assíncrona no banco de dados e depois abre o Whats
+    await finalizarCompra("Cliente Loja", WHATS_NUMBER, totalFinal, cupomAplicadoNome);
     window.open(`https://wa.me/${WHATS_NUMBER}?text=${encodeURIComponent(msg)}`);
+}
+
+async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupom) {
+    try {
+        await db.from('pedidos').insert([
+            { 
+                cliente_nome: nomeCliente, 
+                whatsapp: whatsCliente, 
+                produtos_comprados: cart, 
+                total: totalComDesconto,
+                cupom_aplicado: cupom
+            }
+        ]);
+    } catch (error) {
+        console.error("Erro ao salvar pedido:", error.message);
+    }
 }
 
 // ======================
@@ -676,32 +729,11 @@ async function saveProduct() {
     showPage('page-loja');
 }
 
-function saveCupom() {
-    const nome = document.getElementById('cupom-nome').value.toUpperCase().trim();
-    const valor = parseInt(document.getElementById('cupom-valor').value);
-    if(!nome || isNaN(valor)) return alert("Preencha o nome e o valor do cupom!");
-    
-    cupons.push({codigo: nome, valor: valor});
-    localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
-    document.getElementById('cupom-nome').value = "";
-    document.getElementById('cupom-valor').value = "";
-    renderAdmin();
-    alert("Cupom criado!");
-}
-
-function deleteCupom(index) {
-    if(confirm("Deseja remover este cupom?")) {
-        cupons.splice(index, 1);
-        localStorage.setItem('petstore_cupons', JSON.stringify(cupons));
-        renderAdmin();
-    }
-}
-
 function renderAdmin() {
     const list = document.getElementById('admin-inventory-list');
     if(!list) return;
     const term = document.getElementById('admin-search').value.toLowerCase();
-    list.innerHTML = `<h3 style="margin:20px 0 10px">Produtos no Estoque</h3>`;
+    list.innerHTML = "";
 
     products.filter(p => (currentAdminCat === 'todos' || p.cat === currentAdminCat) && p.nome.toLowerCase().includes(term))
     .forEach(p => {
@@ -746,6 +778,117 @@ async function deleteProduct(id) {
     }
 }
 
+// ==========================================
+// GERENCIAMENTO DE CUPONS (SUPABASE)
+// ==========================================
+async function renderCupons() {
+    const listaDiv = document.getElementById('cupons-lista');
+    if (!listaDiv) return;
+
+    try {
+        const { data: listaDeCupons, error } = await db
+            .from('cupons')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        listaDiv.innerHTML = '';
+
+        if (!listaDeCupons || listaDeCupons.length === 0) {
+            listaDiv.innerHTML = '<p style="color: gray; font-style: italic;">Nenhum cupom ativo no momento.</p>';
+            return;
+        }
+
+        listaDeCupons.forEach(cupom => {
+            listaDiv.innerHTML += `
+                <div class="inventory-card" style="border-left: 5px solid var(--accent)">
+                    <div>
+                        <strong style="color: #1a365d;">${cupom.codigo}</strong> 
+                        <span style="color: #4a5568; margin-left: 10px;">| Desconto: ${cupom.desconto}%</span>
+                    </div>
+                    <div>
+                        <button class="btn-edit" onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})">Editar</button>
+                        <button class="btn-del" onclick="removerCupom(${cupom.id})">Remover</button>
+                    </div>
+                </div>`;
+        });
+    } catch (error) {
+        console.error("Erro ao carregar cupons:", error.message);
+    }
+}
+
+async function criarCupom() {
+    const codigoInput = document.getElementById('cupom-nome'); 
+    const descontoInput = document.getElementById('cupom-valor');
+
+    if (!codigoInput || !descontoInput) return;
+
+    const codigo = codigoInput.value.trim().toUpperCase();
+    const desconto = parseFloat(descontoInput.value);
+
+    if (!codigo || isNaN(desconto)) {
+        return alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
+    }
+
+    try {
+        const { error } = await db
+            .from('cupons')
+            .insert([{ codigo: codigo, desconto: desconto }]);
+
+        if (error) {
+            if (error.code === '23505') {
+                return alert("Já existe um cupom cadastrado com este código!");
+            }
+            throw error;
+        }
+
+        alert("Cupom criado com sucesso!");
+        codigoInput.value = '';
+        descontoInput.value = '';
+        renderCupons();
+    } catch (error) {
+        alert("Erro ao criar cupom: " + error.message);
+    }
+}
+
+async function removerCupom(id) {
+    if (!confirm("Tem certeza que deseja excluir este cupom?")) return;
+    try {
+        const { error } = await db.from('cupons').delete().eq('id', id);
+        if (error) throw error;
+        alert("Cupom removido!");
+        renderCupons();
+    } catch (error) {
+        alert("Erro ao remover cupom: " + error.message);
+    }
+}
+
+async function editarCupom(id, codigoAtual, descontoAtual) {
+    const novoCodigo = prompt("Digite o novo código do cupom:", codigoAtual);
+    if (novoCodigo === null) return;
+
+    const novoDescontoTexto = prompt("Digite a nova porcentagem de desconto:", descontoAtual);
+    if (novoDescontoTexto === null) return;
+    
+    const novoDesconto = parseFloat(novoDescontoTexto);
+    if (!novoCodigo.trim() || isNaN(novoDesconto)) {
+        return alert("Valores inválidos inseridos. Edição cancelada.");
+    }
+
+    try {
+        const { error } = await db
+            .from('cupons')
+            .update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto })
+            .eq('id', id);
+
+        if (error) throw error;
+        alert("Cupom editado com sucesso!");
+        renderCupons();
+    } catch (error) {
+        alert("Erro ao editar cupom: " + error.message);
+    }
+}
+
 // ======================
 // AUTENTICAÇÃO LOCAL
 // ======================
@@ -759,14 +902,19 @@ async function hashPassword(password) {
 async function handleLogin() {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value;
+    
     const adminRaw = localStorage.getItem('petstore_admin');
     if(!adminRaw) return alert('Admin não configurado.');
+    
     const admin = JSON.parse(adminRaw);
     const hash = await hashPassword(p);
+    
     if(u === admin.user && hash === admin.hash) {
         localStorage.setItem('petstore_session', 'true');
         location.reload();
-    } else alert("Usuário ou senha inválidos!");
+    } else {
+        alert("Usuário ou senha inválidos!");
+    }
 }
 
 async function seedAdmin(u, p) {
@@ -797,201 +945,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     loadProductsFromSupabase();
-    renderCupons(); // <-- Adicione esta linha bem aqui!
-});
-
-// --- MAPA DE SUBCATEGORIAS ---
-const subMenuMap = {
-    'racoes': [{ nome: 'Para Cães', id: 'caes' }, { nome: 'Para Gatos', id: 'gatos' }],
-    'remedios': [{ nome: 'Para Cães', id: 'remedioscaes' }, { nome: 'Para Gatos', id: 'remediosgatos' }],
-    'antiparasitario': [{ nome: 'Para Cães', id: 'antiparasitriocaes' }, { nome: 'Para Gatos', id: 'antiparasitriogatos' }],
-    'camas': [{ nome: 'Para Cães', id: 'camacao' }, { nome: 'Para Gatos', id: 'camagato' }],
-    'petiscos': [{ nome: 'Para Cães', id: 'petiscocao' }, { nome: 'Para Gatos', id: 'petiscogato' }],
-    'acessorio': [{ nome: 'Para Cães', id: 'acessoriocao' }, { nome: 'Para Gatos', id: 'acessoriogato' }]
-};
-
-function filterMain(mainCat, el) {
-    document.querySelectorAll('#shop-cats .cat-card').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    const subContainer = document.getElementById('sub-cats-container');
-    if(!subContainer) return;
-    
-    if (mainCat === 'todos' || !subMenuMap[mainCat]) {
-        subContainer.style.display = 'none';
-        setCategory(mainCat, el, 'shop'); 
-    } else {
-        subContainer.style.display = 'flex';
-        subContainer.innerHTML = '';
-        subMenuMap[mainCat].forEach(sub => {
-            const btn = document.createElement('div');
-            btn.className = 'cat-card';
-            btn.innerHTML = sub.nome;
-            btn.onclick = function() {
-                document.querySelectorAll('#sub-cats-container .cat-card').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                setCategory(sub.id, this, 'shop');
-            };
-            subContainer.appendChild(btn);
-        });
-        setCategory(mainCat, el, 'shop');
-    }
-}
-
-async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupom) {
-    try {
-        const { data, error } = await db
-            .from('pedidos')
-            .insert([
-                { 
-                    cliente_nome: nomeCliente, 
-                    whatsapp: whatsCliente, 
-                    produtos_comprados: cart, // Seu array do carrinho
-                    total: totalComDesconto,
-                    cupom_aplicado: cupom
-                }
-            ]);
-
-        if (error) throw error;
-        alert("Pedido registrado com sucesso!");
-    } catch (error) {
-        console.error("Erro ao salvar pedido:", error.message);
-    }
-}
-
-// ==========================================
-// GERENCIAMENTO DE CUPONS (SUPABASE)
-// ==========================================
-
-// 1. FUNÇÃO PARA CARREGAR E EXIBIR OS CUPONS NA TELA
-async function renderCupons() {
-    const listaDiv = document.getElementById('cupons-lista');
-    if (!listaDiv) return;
-
-    try {
-        // Busca todos os cupons direto do Supabase
-        const { data: listaDeCupons, error } = await db
-            .from('cupons')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Limpa a lista antes de desenhar os cupons atualizados
-        listaDiv.innerHTML = '';
-
-        if (listaDeCupons.length === 0) {
-            listaDiv.innerHTML = '<p style="color: gray; font-style: italic;">Nenhum cupom ativo no momento.</p>';
-            return;
-        }
-
-        // Desenha cada cupom seguindo a mesma estrutura e estilo do seu inventário
-        listaDeCupons.forEach(cupom => {
-            listaDiv.innerHTML += `
-                <div class="produto-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 8px; background: #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div>
-                        <strong style="color: #1a365d;">${cupom.codigo}</strong> 
-                        <span style="color: #4a5568; margin-left: 10px;">| Desconto: ${cupom.desconto}%</span>
-                    </div>
-                    <div>
-                        <button onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})" style="background-color: #2b6cb0; color: white; border: none; padding: 5px 12px; margin-right: 5px; border-radius: 4px; cursor: pointer;">Editar</button>
-                        <button onclick="removerCupom(${cupom.id})" style="background-color: #e53e3e; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Remover</button>
-                    </div>
-                </div>
-            `;
-        });
-    } catch (error) {
-        console.error("Erro ao carregar cupons:", error.message);
-    }
-}
-
-// 2. FUNÇÃO PARA CRIAR UM NOVO CUPOM NO BANCO
-async function criarCupom() {
-    // Pegue os IDs correspondentes aos seus inputs reais da tela
-    // Substitua 'input-codigo-cupom' e 'input-desconto-cupom' pelos IDs que você usou no seu HTML
-    const codigoInput = document.getElementById('input-codigo-cupom'); 
-    const descontoInput = document.getElementById('input-desconto-cupom');
-
-    if (!codigoInput || !descontoInput) return;
-
-    const codigo = codigoInput.value.trim().toUpperCase();
-    const desconto = parseFloat(descontoInput.value);
-
-    if (!codigo || isNaN(desconto)) {
-        return alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
-    }
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .insert([{ codigo: codigo, desconto: desconto }]);
-
-        if (error) {
-            if (error.code === '23505') { // Código de erro do Postgres para item duplicado
-                return alert("Já existe um cupom cadastrado com este código!");
-            }
-            throw error;
-        }
-
-        alert("Cupom criado com sucesso!");
-        
-        // Limpa os campos do formulário
-        codigoInput.value = '';
-        descontoInput.value = '';
-
-        // Atualiza a listagem na tela na hora
+    // Executa a carga inicial apenas se estiver na página de administração
+    if (localStorage.getItem('petstore_session')) {
         renderCupons();
-    } catch (error) {
-        alert("Erro ao criar cupom: " + error.message);
     }
-}
-
-// 3. FUNÇÃO PARA EXCLUIR UM CUPOM
-async function removerCupom(id) {
-    if (!confirm("Tem certeza que deseja excluir este cupom de desconto?")) return;
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-
-        alert("Cupom removido!");
-        renderCupons(); // Atualiza a tela
-    } catch (error) {
-        alert("Erro ao remover cupom: " + error.message);
-    }
-}
-
-// 4. FUNÇÃO PARA EDITAR UM CUPOM EXISTENTE
-async function editarCupom(id, codigoAtual, descontoAtual) {
-    const novoCodigo = prompt("Digite o novo código do cupom:", codigoAtual);
-    if (novoCodigo === null) return; // Se cancelar, para
-
-    const novoDescontoTexto = prompt("Digite a nova porcentagem de desconto:", descontoAtual);
-    if (novoDescontoTexto === null) return; // Se cancelar, para
-    
-    const novoDesconto = parseFloat(novoDescontoTexto);
-
-    if (!novoCodigo.trim() || isNaN(novoDesconto)) {
-        return alert("Valores inválidos inseridos. Edição cancelada.");
-    }
-
-    try {
-        const { error } = await db
-            .from('cupons')
-            .update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        alert("Cupom editado com sucesso!");
-        renderCupons(); // Atualiza a tela
-    } catch (error) {
-        alert("Erro ao editar cupom: " + error.message);
-    }
-}
+});
 </script>
 </body>
 </html>
