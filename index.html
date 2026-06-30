@@ -898,24 +898,46 @@ async function editarCupom(id, codigoAtual, descontoAtual) {
 // ======================
 // AUTENTICAÇÃO LOCAL
 // ======================
+async function hashPassword(password) {
+    const enc = new TextEncoder();
+    const data = enc.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-// INICIALIZAÇÃO DO APP
-document.addEventListener("DOMContentLoaded", () => {
-    if(localStorage.getItem('petstore_session')) {
-        const navAdmin = document.getElementById('nav-admin');
-        const navLogout = document.getElementById('nav-logout');
-        const navLogin = document.getElementById('nav-login');
-        if(navAdmin) navAdmin.style.display = 'block';
-        if(navLogout) navLogout.style.display = 'block';
-        if(navLogin) navLogin.style.display = 'none';
-    }
+async function handleLogin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
     
-    loadProductsFromSupabase();
-    // Executa a carga inicial apenas se estiver na página de administração
-    if (localStorage.getItem('petstore_session')) {
-        renderCupons();
+    const adminRaw = localStorage.getItem('petstore_admin');
+    if(!adminRaw) return alert('Admin não configurado.');
+    
+    const admin = JSON.parse(adminRaw);
+    const hash = await hashPassword(p);
+    
+    if(u === admin.user && hash === admin.hash) {
+        localStorage.setItem('petstore_session', 'true');
+        location.reload();
+    } else {
+        alert("Usuário ou senha inválidos!");
     }
-});
+}
+
+async function seedAdmin(u, p) {
+    const hash = await hashPassword(p);
+    localStorage.setItem('petstore_admin', JSON.stringify({ user: u, hash }));
+    console.info('Admin criado.');
+}
+
+function attemptAdminAccess() {
+    if (localStorage.getItem('petstore_session')) showPage('page-admin');
+    else showPage('page-auth');
+}
+
+function handleLogout() {
+    localStorage.removeItem('petstore_session');
+    location.reload();
+}
 
 // INICIALIZAÇÃO DO APP
 document.addEventListener("DOMContentLoaded", () => {
