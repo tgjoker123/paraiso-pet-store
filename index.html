@@ -316,7 +316,7 @@
             <i class="fa-solid fa-shopping-basket"></i>
             <span id="cart-badge" class="cart-badge">0</span>
         </button>
-        <button type="button" id="nav-admin" class="btn btn-admin" onclick="attemptAdminAccess()">
+        <button type="button" id="nav-admin" class="btn btn-admin" style="display:none" onclick="attemptAdminAccess()">
             <i class="fa-solid fa-chart-line"></i>
         </button>
         <button type="button" id="nav-login" class="btn btn-login" onclick="showPage('page-auth')">
@@ -469,7 +469,6 @@ let currentAdminCat = 'todos';
 let descontoAtivo = 0;
 let cupomAplicadoNome = "";
 
-// MAPA DE SUBCATEGORIAS
 const subMenuMap = {
     'racoes': [{ nome: 'Para Cães', id: 'caes' }, { nome: 'Para Gatos', id: 'gatos' }],
     'remedios': [{ nome: 'Para Cães', id: 'remedioscaes' }, { nome: 'Para Gatos', id: 'remediosgatos' }],
@@ -479,32 +478,20 @@ const subMenuMap = {
     'acessorio': [{ nome: 'Para Cães', id: 'acessoriocao' }, { nome: 'Para Gatos', id: 'acessoriogato' }]
 };
 
-// --- BUSCAR PRODUTOS DA SUPABASE ---
 async function loadProductsFromSupabase() {
     try {
-        const { data, error } = await db
-            .from('produtos')
-            .select('*')
-            .order('nome', { ascending: true });
-
+        const { data, error } = await db.from('produtos').select('*').order('nome', { ascending: true });
         if (error) throw error;
-        
         products = data || [];
         renderShop();
-        if (document.getElementById('page-admin')?.classList.contains('active-page')) {
-            renderAdmin();
-        }
     } catch (error) {
         console.error("Erro ao buscar produtos:", error);
     }
 }
 
-// --- NAVEGAÇÃO ---
 function showPage(id) {
     if(id === 'page-admin' && !localStorage.getItem('petstore_session')) {
-        alert('Acesso administrativo restrito. Faça login como administrador.');
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-        document.getElementById('page-auth').classList.add('active-page');
+        alert('Acesso administrativo restrito.');
         return;
     }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
@@ -550,13 +537,9 @@ function filterMain(mainCat, el) {
     }
 }
 
-// ======================
-// RENDERIZAÇÃO DA LOJA
-// ======================
 function renderShop() {
     const container = document.getElementById('shop-container');
     if(!container) return;
-    
     const searchInput = document.getElementById('shop-search');
     const term = searchInput ? searchInput.value.toLowerCase() : "";
     container.innerHTML = "";
@@ -578,9 +561,6 @@ function renderShop() {
     });
 }
 
-// ======================
-// SISTEMA DE CARRINHO
-// ======================
 function toggleCart() {
     const side = document.getElementById('cart-sidebar');
     const overlay = document.getElementById('cart-overlay');
@@ -618,7 +598,7 @@ function updateCart() {
                     <button type="button" onclick="changeQty(${item.id}, -1)" style="border:none; background:#eee; width:25px; height:25px; border-radius:5px; cursor:pointer">-</button>
                     <span>${item.qty}</span>
                     <button type="button" onclick="changeQty(${item.id}, 1)" style="border:none; background:#eee; width:25px; height:25px; border-radius:5px; cursor:pointer">+</button>
-                    <button type="button" onclick="removeFromCart(${item.id})" style="border:none; color:red; background:none; font-size:1.2rem; cursor:pointer" aria-label="Remover item">×</button>
+                    <button type="button" onclick="removeFromCart(${item.id})" style="border:none; color:red; background:none; font-size:1.2rem; cursor:pointer">×</button>
                 </div>
             </div>`;
     });
@@ -647,12 +627,7 @@ async function applyCoupon() {
     if(!input) return alert("Digite um cupom!");
 
     try {
-        const { data, error } = await db
-            .from('cupons')
-            .select('*')
-            .eq('codigo', input)
-            .single();
-
+        const { data, error } = await db.from('cupons').select('*').eq('codigo', input).single();
         if(error || !data) {
             descontoAtivo = 0;
             cupomAplicadoNome = "";
@@ -660,7 +635,7 @@ async function applyCoupon() {
         } else {
             descontoAtivo = data.desconto;
             cupomAplicadoNome = input;
-            alert(`Cupom ${input} de ${data.desconto}% aplicado com sucesso!`);
+            alert(`Cupom ${input} de ${data.desconto}% aplicado!`);
         }
         updateCart();
     } catch (err) {
@@ -670,39 +645,21 @@ async function applyCoupon() {
 
 async function checkout() {
     if(cart.length === 0) return alert("Sua sacola está vazia!");
-    
     let subtotal = cart.reduce((acc, curr) => acc + (curr.preco * curr.qty), 0);
     let totalFinal = subtotal - (subtotal * (descontoAtivo / 100));
 
     let msg = "NOVO PEDIDO - PARAÍSO PET STORE\n\n";
-    cart.forEach(i => {
-        msg += ` 🐾 ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`;
-    });
+    cart.forEach(i => { msg += ` 🐾 ${i.nome} (x${i.qty}) - R$ ${(i.preco * i.qty).toFixed(2)}\n`; });
     if(descontoAtivo > 0) msg += `\n*Cupom:* ${cupomAplicadoNome} (-${descontoAtivo}%)`;
     msg += `\n\n*TOTAL: R$ ${totalFinal.toFixed(2)}*`;
 
-    // Salva o pedido no Supabase
     await finalizarCompra("Cliente Loja", WHATS_NUMBER, totalFinal, cupomAplicadoNome);
-    
-    // Gera a URL otimizada para celular e computador
-    const urlWhats = `https://api.whatsapp.com/send?phone=${WHATS_NUMBER}&text=${encodeURIComponent(msg)}`;
-    
-    // Redireciona diretamente na mesma aba, garantindo abertura do app no celular
-    window.location.href = urlWhats;
+    window.location.href = `https://api.whatsapp.com/send?phone=${WHATS_NUMBER}&text=${encodeURIComponent(msg)}`;
 }
-
 
 async function finalizarCompra(nomeCliente, whatsCliente, totalComDesconto, cupom) {
     try {
-        await db.from('pedidos').insert([
-            { 
-                cliente_nome: nomeCliente, 
-                whatsapp: whatsCliente, 
-                produtos_comprados: cart, 
-                total: totalComDesconto,
-                cupom_aplicado: cupom
-            }
-        ]);
+        await db.from('pedidos').insert([{ cliente_nome: nomeCliente, whatsapp: whatsCliente, produtos_comprados: cart, total: totalComDesconto, cupom_aplicado: cupom }]);
     } catch (error) {
         console.error("Erro ao salvar pedido:", error.message);
     }
@@ -716,18 +673,16 @@ async function saveProduct() {
     const nome = document.getElementById('form-nome').value;
     const cat = document.getElementById('form-cat').value;
     const preco = parseFloat(document.getElementById('form-preco').value);
-    const estoque = parseInt(document.getElementById('form-estoque').value);
+    const __estoque = parseInt(document.getElementById('form-estoque').value);
     const img = document.getElementById('form-img').value;
 
     if(!nome || isNaN(preco)) return alert("Preencha os campos corretamente!");
-    const productData = { nome, cat, preco, estoque, img };
+    const productData = { nome, cat, preco, estoque: __estoque, img };
 
     if(id) {
-        const { error } = await db.from('produtos').update(productData).eq('id', id);
-        if(error) return alert("Erro: " + error.message);
+        await db.from('produtos').update(productData).eq('id', id);
     } else {
-        const { error } = await db.from('produtos').insert([productData]);
-        if(error) return alert("Erro: " + error.message);
+        await db.from('produtos').insert([productData]);
     }
 
     resetForm();
@@ -778,8 +733,7 @@ function resetForm() {
 
 async function deleteProduct(id) {
     if(confirm("Excluir permanentemente?")) {
-        const { error } = await db.from('produtos').delete().eq('id', id);
-        if(error) return alert("Erro: " + error.message);
+        await db.from('produtos').delete().eq('id', id);
         await loadProductsFromSupabase();
     }
 }
@@ -790,148 +744,99 @@ async function deleteProduct(id) {
 async function renderCupons() {
     const listaDiv = document.getElementById('cupons-lista');
     if (!listaDiv) return;
-
     try {
-        const { data: listaDeCupons, error } = await db
-            .from('cupons')
-            .select('*')
-            .order('created_at', { ascending: false });
-
+        const { data: listaDeCupons, error } = await db.from('cupons').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         listaDiv.innerHTML = '';
-
         if (!listaDeCupons || listaDeCupons.length === 0) {
-            listaDiv.innerHTML = '<p style="color: gray; font-style: italic;">Nenhum cupom ativo no momento.</p>';
+            listaDiv.innerHTML = '<p style="color: gray; font-style: italic;">Nenhum cupom ativo.</p>';
             return;
         }
-
         listaDeCupons.forEach(cupom => {
             listaDiv.innerHTML += `
                 <div class="inventory-card" style="border-left: 5px solid var(--accent)">
+                    <div><strong>${cupom.codigo}</strong> <span style="color: #4a5568; margin-left: 10px;">| Desconto: ${cupom.desconto}%</span></div>
                     <div>
-                        <strong style="color: #1a365d;">${cupom.codigo}</strong> 
-                        <span style="color: #4a5568; margin-left: 10px;">| Desconto: ${cupom.desconto}%</span>
-                    </div>
-                    <div>
-                        <button class="btn-edit" onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})">Editar</button>
-                        <button class="btn-del" onclick="removerCupom(${cupom.id})">Remover</button>
+                        <button type="button" class="btn-edit" onclick="editarCupom(${cupom.id}, '${cupom.codigo}', ${cupom.desconto})">Editar</button>
+                        <button type="button" class="btn-del" onclick="removerCupom(${cupom.id})">Remover</button>
                     </div>
                 </div>`;
         });
     } catch (error) {
-        console.error("Erro ao carregar cupons:", error.message);
+        console.error(error.message);
     }
 }
 
 async function criarCupom() {
     const codigoInput = document.getElementById('cupom-nome'); 
-    const descontoInput = document.getElementById('cupom-valor');
-
+    const强 descontoInput = document.getElementById('cupom-valor');
     if (!codigoInput || !descontoInput) return;
 
     const codigo = codigoInput.value.trim().toUpperCase();
     const desconto = parseFloat(descontoInput.value);
 
-    if (!codigo || isNaN(desconto)) {
-        return alert("Por favor, preencha o código do cupom e o valor do desconto corretamente!");
-    }
+    if (!codigo || isNaN(desconto)) return alert("Preencha os campos corretamente!");
 
     try {
-        const { error } = await db
-            .from('cupons')
-            .insert([{ codigo: codigo, desconto: desconto }]);
-
-        if (error) {
-            if (error.code === '23505') {
-                return alert("Já existe um cupom cadastrado com este código!");
-            }
-            throw error;
-        }
-
-        alert("Cupom criado com sucesso!");
+        const { error } = await db.from('cupons').insert([{ codigo: codigo, desconto: desconto }]);
+        if (error) throw error;
+        alert("Cupom criado!");
         codigoInput.value = '';
         descontoInput.value = '';
         renderCupons();
     } catch (error) {
-        alert("Erro ao criar cupom: " + error.message);
+        alert("Erro: " + error.message);
     }
 }
 
 async function removerCupom(id) {
-    if (!confirm("Tem certeza que deseja excluir este cupom?")) return;
+    if (!confirm("Excluir este cupom?")) return;
     try {
-        const { error } = await db.from('cupons').delete().eq('id', id);
-        if (error) throw error;
-        alert("Cupom removido!");
+        await db.from('cupons').delete().eq('id', id);
         renderCupons();
     } catch (error) {
-        alert("Erro ao remover cupom: " + error.message);
+        alert(error.message);
     }
 }
 
 async function editarCupom(id, codigoAtual, descontoAtual) {
     const novoCodigo = prompt("Digite o novo código do cupom:", codigoAtual);
     if (novoCodigo === null) return;
-
     const novoDescontoTexto = prompt("Digite a nova porcentagem de desconto:", descontoAtual);
     if (novoDescontoTexto === null) return;
     
     const novoDesconto = parseFloat(novoDescontoTexto);
-    if (!novoCodigo.trim() || isNaN(novoDesconto)) {
-        return alert("Valores inválidos inseridos. Edição cancelada.");
-    }
+    if (!novoCodigo.trim() || isNaN(novoDesconto)) return alert("Valores inválidos.");
 
     try {
-        const { error } = await db
-            .from('cupons')
-            .update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto })
-            .eq('id', id);
-
-        if (error) throw error;
-        alert("Cupom editado com sucesso!");
+        await db.from('cupons').update({ codigo: novoCodigo.trim().toUpperCase(), desconto: novoDesconto }).eq('id', id);
         renderCupons();
     } catch (error) {
-        alert("Erro ao editar cupom: " + error.message);
+        alert(error.message);
     }
 }
 
 // ======================
-// AUTENTICAÇÃO LOCAL
+// AUTENTICAÇÃO SIMPLIFICADA
 // ======================
-async function hashPassword(password) {
-    const enc = new TextEncoder();
-    const data = enc.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function handleLogin() {
+function handleLogin() {
     const u = document.getElementById('login-user').value.trim();
     const p = document.getElementById('login-pass').value;
     
-    const adminRaw = localStorage.getItem('petstore_admin');
-    if(!adminRaw) return alert('Admin não configurado.');
-    
-    const admin = JSON.parse(adminRaw);
-    const hash = await hashPassword(p);
-    
-    if(u === admin.user && hash === admin.hash) {
+    if(u === 'admin' && p === '09601abc') {
         localStorage.setItem('petstore_session', 'true');
-        location.reload();
+        location.reload(); 
     } else {
         alert("Usuário ou senha inválidos!");
     }
 }
 
-async function seedAdmin(u, p) {
-    const hash = await hashPassword(p);
-    localStorage.setItem('petstore_admin', JSON.stringify({ user: u, hash }));
-    console.info('Admin criado.');
-}
-
 function attemptAdminAccess() {
-    if (localStorage.getItem('petstore_session')) showPage('page-admin');
-    else showPage('page-auth');
+    if (localStorage.getItem('petstore_session')) {
+        showPage('page-admin');
+    } else {
+        showPage('page-auth');
+    }
 }
 
 function handleLogout() {
@@ -951,7 +856,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     loadProductsFromSupabase();
-    // Executa a carga inicial apenas se estiver na página de administração
     if (localStorage.getItem('petstore_session')) {
         renderCupons();
     }
